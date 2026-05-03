@@ -7,7 +7,6 @@
 В корне репозитория должны лежать:
 
 - `index.html`
-- `.nojekyll`
 - `README.md`
 
 ## Как опубликовать
@@ -23,6 +22,6 @@
 
 ## Адрес сайта
 
-Если репозиторий называется `quest-game`, адрес будет таким:
+Сайт доступен по адресу:
 
-`https://<github-username>.github.io/quest-game/`
+`https://lordvitofirim.github.io/quest-game/`
