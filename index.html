@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Квест-приключение</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --bg-top: #08111f;
+            --bg-bottom: #0f1d3c;
+            --card: rgba(18, 30, 56, 0.92);
+            --card-border: rgba(255, 255, 255, 0.12);
+            --accent: #7c8cf0;
+            --accent-strong: #b77cff;
+            --text: #f3f7ff;
+            --muted: #9bb0d9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        html, body {
+            min-height: 100%;
+            background: radial-gradient(circle at top center, rgba(124, 140, 240, 0.25), transparent 22%),
+                        linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom) 16px;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 20% 10%, rgba(255,255,255,0.12), transparent 16%),
+                        radial-gradient(circle at 80% 15%, rgba(255,182,193,0.14), transparent 14%),
+                        radial-gradient(circle at 50% 80%, rgba(124, 140, 240, 0.16), transparent 18%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .app {
+            position: relative;
+            max-width: 980px;
+            width: min(100%, 980px);
+            min-height: 660px;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+            z-index: 1;
+        }
+
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 32px;
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            box-shadow: 0 28px 90px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+
+        .scene-panel {
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 660px;
+        }
+
+        .scene-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .scene-header h1 {
+            font-size: clamp(2rem, 3vw, 2.6rem);
+            line-height: 1.05;
+            letter-spacing: -0.04em;
+        }
+
+        .scene-header p {
+            color: var(--muted);
+            font-size: 0.98rem;
+            max-width: 420px;
+        }
+
+        .scene-card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.06));
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 28px;
+            padding: 24px;
+            margin-bottom: 24px;
+            display: grid;
+            gap: 18px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scene-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 80% 20%, rgba(124, 140, 240, 0.18), transparent 22%),
+                        radial-gradient(circle at 20% 80%, rgba(255, 182, 193, 0.12), transparent 14%);
+            pointer-events: none;
+        }
+
+        .scene-card h2 {
+            font-size: clamp(1.4rem, 2.5vw, 1.8rem);
+            line-height: 1.2;
+            z-index: 1;
+        }
+
+        .scene-card p {
+            color: var(--muted);
+            line-height: 1.75;
+            z-index: 1;
+        }
+
+        .choices {
+            display: grid;
+            gap: 14px;
+        }
+
+        .choice {
+            display: block;
+            text-decoration: none;
+            padding: 18px 20px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: var(--text);
+            font-size: 1rem;
+            font-weight: 600;
+            transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .choice::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(124, 140, 240, 0.25), transparent 55%);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .choice:hover,
+        .choice:focus-visible {
+            transform: translateY(-2px);
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(124, 140, 240, 0.35);
+        }
+
+        .choice:hover::before,
+        .choice:focus-visible::before {
+            opacity: 1;
+        }
+
+        .choice small {
+            display: block;
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 0.92rem;
+            font-weight: 400;
+        }
+
+        .sidebar {
+            display: grid;
+            gap: 22px;
+            padding: 28px;
+        }
+
+        .sidebar-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 28px;
+            padding: 22px;
+            display: grid;
+            gap: 16px;
+        }
+
+        .sidebar-card h3 {
+            font-size: 1.05rem;
+            letter-spacing: 0.01em;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .pill {
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.08);
+            font-size: 0.94rem;
+            color: var(--muted);
+        }
+
+        .panel-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-top: auto;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border: none;
+            border-radius: 999px;
+            padding: 14px 22px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 14px 30px rgba(124, 140, 240, 0.25);
+        }
+
+        .button:active {
+            transform: translateY(1px);
+            box-shadow: 0 8px 18px rgba(124, 140, 240, 0.2);
+        }
+
+        .map-card {
+            position: relative;
+            overflow: hidden;
+            aspect-ratio: 1 / 1;
+            min-height: 360px;
+        }
+
+        .map-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(124,140,240,0.22), rgba(255,182,193,0.18));
+            opacity: 0.22;
+            pointer-events: none;
+        }
+
+        .map {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-rows: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 16px;
+            z-index: 1;
+        }
+
+        .map-step {
+            border-radius: 22px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 14px;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .map-step.active {
+            background: rgba(124, 140, 240, 0.18);
+            color: white;
+            border-color: rgba(124, 140, 240, 0.45);
+            box-shadow: 0 0 18px rgba(124, 140, 240, 0.16);
+        }
+
+        .map-step span {
+            font-size: 1.4rem;
+            line-height: 1;
+        }
+
+        .hero-badge {
+            display: grid;
+            gap: 12px;
+        }
+
+        .hero-badge .stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .hero-badge .stat strong {
+            color: white;
+        }
+
+        .result-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 10, 28, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 10;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+
+        .result-overlay.visible {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .result-card {
+            width: min(620px, 100%);
+            background: rgba(10, 18, 36, 0.96);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 32px;
+            padding: 32px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at top center, rgba(124,140,240,0.25), transparent 20%);
+            pointer-events: none;
+        }
+
+        .result-card h2 {
+            font-size: clamp(2rem, 4vw, 2.8rem);
+            margin-bottom: 14px;
+        }
+
+        .result-card p {
+            color: var(--muted);
+            line-height: 1.8;
+            margin-bottom: 24px;
+        }
+
+        .result-badges {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 14px;
+            margin-bottom: 26px;
+        }
+
+        .result-badge {
+            padding: 14px 18px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.06);
+            color: var(--text);
+            font-size: 0.96rem;
+            font-weight: 600;
+        }
+
+        @media (max-width: 960px) {
+            .app { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 680px) {
+            .app { gap: 18px; }
+            .scene-panel, .sidebar { padding: 20px; }
+            .scene-header { flex-direction: column; align-items: flex-start; }
+            .map { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <section class="panel scene-panel">
+            <div>
+                <div class="scene-header">
+                    <div>
+                        <h1 id="sceneTitle">Пробуждение в туманном лесу</h1>
+                        <p id="sceneSubtitle">Ты просыпаешься в дороге приключений. Выбери направление и исследуй волшебные дали.</p>
+                    </div>
+                    <div>
+                        <span class="pill" id="sceneMarker">Глава 1</span>
+                    </div>
+                </div>
+
+                <article class="scene-card">
+                    <h2 id="sceneHeading">Твоя задача</h2>
+                    <p id="sceneDescription">Каждое решение влияет на путь героя: спасёшь странника, обойдёшь древний шатёр или найдёшь скрытую тропу?</p>
+                </article>
+
+                <div class="choices" id="choices"></div>
+            </div>
+
+            <div class="panel-footer">
+                <span id="hintLine">Подсказка: выбирай любой путь и смотри, что откроется.</span>
+                <button class="button" id="restartButton">Сбросить квест</button>
+            </div>
+        </section>
+
+        <aside class="sidebar">
+            <div class="sidebar-card">
+                <h3>Твой путь</h3>
+                <div class="map" id="mapSteps"></div>
+            </div>
+            <div class="sidebar-card hero-badge">
+                <h3>Статус героя</h3>
+                <div class="stat"><span>Смелость</span><strong id="statBravery">80%</strong></div>
+                <div class="stat"><span>Мудрость</span><strong id="statWisdom">70%</strong></div>
+                <div class="stat"><span>Удача</span><strong id="statLuck">65%</strong></div>
+            </div>
+        </aside>
+    </div>
+
+    <div class="result-overlay" id="resultOverlay">
+        <div class="result-card">
+            <h2 id="resultTitle">Путешествие завершено</h2>
+            <p id="resultText">Ты прошёл квест и собрал свою историю. Нажми «Начать заново», чтобы испытать другой путь.</p>
+            <div class="result-badges" id="resultBadges"></div>
+            <button class="button" id="resultRestart">Начать заново</button>
+        </div>
+    </div>
+
+    <script>
+        const scenes = {
+            start: {
+                title: 'Пробуждение в туманном лесу',
+                subtitle: 'Ты просыпаешься на тропе, окружённой мягким светом и шёпотом.',
+                heading: 'Что будет первым шагом?',
+                description: 'Рядом виднеются три дороги: к костру путешественников, к горной тропе и к старой хижине. Выбери направление и посмотри, что найдёшь.',
+                marker: 'Глава 1',
+                choices: [
+                    { text: 'Идти к костру', small: 'Поговорить с незнакомцем', next: 'camp' },
+                    { text: 'Подняться в горы', small: 'Искать древние руины', next: 'mountain' },
+                    { text: 'Заглянуть в хижину', small: 'Найти тайный свиток', next: 'hut' }
+                ],
+                hint: 'Иногда самый тихий путь приносит самые интересные истории.'
+            },
+            camp: {
+                title: 'Костёр путешественников',
+                subtitle: 'Тепло огня и добрые лица дают силы.',
+                heading: 'Ты встречаешь путника',
+                description: 'Он предлагает карту и чай. Перед тобой выбор: помочь ему, продолжить путь или изучить тёмную тропу за лагерем.',
+                marker: 'Глава 2',
+                choices: [
+                    { text: 'Помочь путнику', small: 'Получи карту и дружбу', next: 'help' },
+                    { text: 'Идти дальше', small: 'Завтра начинается новый путь', next: 'path' },
+                    { text: 'Осмотреть тропу', small: 'Возможно там скрыто что-то важное', next: 'secretTrail' }
+                ],
+                hint: 'Добро и любопытство часто влияют на следующий шаг.'
+            },
+            mountain: {
+                title: 'Горная тропа',
+                subtitle: 'Ветер и камни проверяют твою решимость.',
+                heading: 'На вершине ты видишь свет',
+                description: 'Это может быть тайная крепость, рассветное озеро или скрытая пещера. Что выберешь?',
+                marker: 'Глава 2',
+                choices: [
+                    { text: 'Идти к крепости', small: 'Найти древнее знание', next: 'fortress' },
+                    { text: 'Спуститься к озеру', small: 'Взгляд на отражение', next: 'lake' },
+                    { text: 'Зайти в пещеру', small: 'Следы скрытых тайн', next: 'cave' }
+                ],
+                hint: 'В горах важно слушать не только разум, но и сердце.'
+            },
+            hut: {
+                title: 'Старая хижина',
+                subtitle: 'Внутри пахнет пергаментом и свечами.',
+                heading: 'Там найдена древняя книга',
+                description: 'Она может открыть особую способность, показать короткую или длинную дорогу. Будь внимателен.',
+                marker: 'Глава 2',
+                choices: [
+                    { text: 'Прочитать книгу', small: 'Узнать древние знаки', next: 'runes' },
+                    { text: 'Выйти на улицу', small: 'Проверь окружающий лес', next: 'forest' },
+                    { text: 'Пойти к колодцу', small: 'Слушай воду', next: 'well' }
+                ],
+                hint: 'Тайны часто лежат ближе, чем кажутся.'
+            },
+            help: {
+                title: 'Друг на пути',
+                subtitle: 'Сильный союзник помогает преодолеть трудности.',
+                heading: 'Путник дарит тебе амулет',
+                description: 'Этот амулет поможет сохранить смелость и найти свет в тумане. С твоей помощью он получает новую карту.',
+                marker: 'Финал',
+                choices: [],
+                hint: 'Хорошие дела возвращаются.'
+            },
+            path: {
+                title: 'Путь дальше',
+                subtitle: 'Ты продолжаешь путь под звёздами.',
+                heading: 'Ночь раскрывает новый маршрут',
+                description: 'Перед тобой открывается большой выбор: вернуться к дороге, идти по ночной тропе или исследовать дальний холм.',
+                marker: 'Финал',
+                choices: [],
+                hint: 'Иногда важно просто идти дальше.'
+            },
+            secretTrail: {
+                title: 'Скрытая тропа',
+                subtitle: 'Тропинка ведёт к древнему месту.',
+                heading: 'Ты нашёл секретную рощу',
+                description: 'В роще растут светящиеся цветы, которые дарят удачу. Отдохни и продолжай путь с новым знанием.',
+                marker: 'Финал',
+                choices: [],
+                hint: 'Любопытство открывает сокровища.'
+            },
+            fortress: {
+                title: 'Древняя крепость',
+                subtitle: 'Там хранятся легендарные руны.',
+                heading: 'Ты изучаешь надписи',
+                description: 'Знания крепости дарят мудрость, но путь назад становится сложнее. Ты готов продолжить приключение?',
+                marker: 'Финал',
+                choices: [],
+                hint: 'Мудрость — это самый ценный трофей.'
+            },
+            lake: {
+                title: 'Зеркальное озеро',
+                subtitle: 'Вода отражает твои намерения.',
+                heading: 'Озеро отпускает твои сомнения',
+                description: 'Здесь можно обновиться и уяснить, куда вести себя дальше. Иногда тишина рассказывает больше, чем слова.',
+                marker: 'Финал',
+                choices: [],
+                hint: 'Иногда лучшее решение — слушать себя.'
+            },
+            cave: {
+                title: 'Таинственная пещера',
+                subtitle: 'Тишина скрывает древние истории.',
+                heading: 'Ты находишь светящийся кристалл',
+                description: 'Этот кристалл дарует силу продолжать путь, даже когда всё кажется тёмным. Держи его в сердце.',
+                marker: 'Финал',
+                choices: [],
+                hint: 'Свет встречается даже в самых глубоких местах.'
+            },
+            runes: {
+                title: 'Древние руны',
+                subtitle: 'Книга раскрывает тайны прошлого.',
+                heading: 'Ты освоил ритуал',
+                description: 'Теперь ты видишь скрытые знаки пути. Это укрепляет твою мудрость и помогает сделать правильный выбор.',
+                marker: 'Финал',
+                choices: [],
+                hint: 'Знание делает путь яснее.'
+            },
+            forest: {
+                title: 'Заколдованный лес',
+                subtitle: 'Ветки шепчут имена.',
+                heading: 'Ты слушаешь лес',
+                description: 'Каждое дерево рассказывает историю. Ты приближаешься к пониманию того, что делает твой путь уникальным.',
+                marker: 'Финал',
+                choices: [],
+                hint: 'Лес хранит свои тайны для внимательных.'
+            },
+            well: {
+                title: 'Магический колодец',
+                subtitle: 'Вода отражает твои цели.',
+                heading: 'Ты видишь своё отражение',
+                description: 'Колодец помогает тебе понять, куда идти дальше. Собери мысли и выбери направление с уверенностью.',
+                marker: 'Финал',
+                choices: [],
+                hint: 'Иногда ответ уже внутри тебя.'
+            }
+        };
+
+        const mapOrder = ['start', 'camp', 'mountain', 'hut', 'help', 'path', 'secretTrail', 'fortress', 'lake', 'cave', 'runes', 'forest', 'well'];
+
+        const state = {
+            current: 'start',
+            visited: ['start']
+        };
+
+        const sceneTitle = document.getElementById('sceneTitle');
+        const sceneSubtitle = document.getElementById('sceneSubtitle');
+        const sceneHeading = document.getElementById('sceneHeading');
+        const sceneDescription = document.getElementById('sceneDescription');
+        const sceneMarker = document.getElementById('sceneMarker');
+        const choicesContainer = document.getElementById('choices');
+        const hintLine = document.getElementById('hintLine');
+        const mapSteps = document.getElementById('mapSteps');
+        const resultOverlay = document.getElementById('resultOverlay');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultText = document.getElementById('resultText');
+        const resultBadges = document.getElementById('resultBadges');
+        const restartButton = document.getElementById('restartButton');
+        const resultRestart = document.getElementById('resultRestart');
+
+        function renderScene() {
+            const scene = scenes[state.current];
+            sceneTitle.textContent = scene.title;
+            sceneSubtitle.textContent = scene.subtitle;
+            sceneHeading.textContent = scene.heading;
+            sceneDescription.textContent = scene.description;
+            sceneMarker.textContent = scene.marker;
+            hintLine.textContent = scene.hint;
+
+            choicesContainer.innerHTML = '';
+            if (scene.choices.length > 0) {
+                scene.choices.forEach(choice => {
+                    const button = document.createElement('button');
+                    button.className = 'choice';
+                    button.type = 'button';
+                    button.innerHTML = `${choice.text}<small>${choice.small}</small>`;
+                    button.addEventListener('click', () => selectChoice(choice));
+                    choicesContainer.appendChild(button);
+                });
+            } else {
+                const resultButton = document.createElement('button');
+                resultButton.className = 'button';
+                resultButton.textContent = 'Завершить квест';
+                resultButton.addEventListener('click', showResult);
+                choicesContainer.appendChild(resultButton);
+            }
+
+            renderMap();
+        }
+
+        function renderMap() {
+            mapSteps.innerHTML = '';
+            mapOrder.forEach(key => {
+                const item = document.createElement('div');
+                item.className = 'map-step';
+                if (state.visited.includes(key)) {
+                    item.classList.add('active');
+                }
+                const scene = scenes[key];
+                const smallTitle = scene.title.split(' ').slice(0, 2).join(' ');
+                item.innerHTML = `<span>${key === state.current ? '★' : '•'}</span><strong>${smallTitle}</strong><small>${scene.marker}</small>`;
+                mapSteps.appendChild(item);
+            });
+        }
+
+        function selectChoice(choice) {
+            state.current = choice.next;
+            if (!state.visited.includes(choice.next)) {
+                state.visited.push(choice.next);
+            }
+            if (choice.next && scenes[choice.next] && scenes[choice.next].choices.length === 0) {
+                renderScene();
+                return;
+            }
+            renderScene();
+        }
+
+        function showResult() {
+            resultOverlay.classList.add('visible');
+            const visitedCount = state.visited.length;
+            resultTitle.textContent = visitedCount > 3 ? 'Магия приключения' : 'Твой путь начат';
+            resultText.textContent = `Ты прошёл ${visitedCount} локаций и создал свою уникальную историю. Нажми кнопку, чтобы попробовать другой маршрут.`;
+            resultBadges.innerHTML = '';
+
+            const badges = [
+                `Локаций: ${visitedCount}`,
+                `Смелость: ${Math.min(100, 70 + visitedCount * 3)}%`,
+                `Удача: ${Math.min(100, 60 + visitedCount * 2)}%`
+            ];
+            badges.forEach(text => {
+                const badge = document.createElement('span');
+                badge.className = 'result-badge';
+                badge.textContent = text;
+                resultBadges.appendChild(badge);
+            });
+        }
+
+        function resetGame() {
+            state.current = 'start';
+            state.visited = ['start'];
+            resultOverlay.classList.remove('visible');
+            renderScene();
+        }
+
+        restartButton.addEventListener('click', resetGame);
+        resultRestart.addEventListener('click', resetGame);
+
+        renderScene();
+    </script>
+</body>
+</html>
