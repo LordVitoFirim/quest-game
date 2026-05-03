@@ -38,6 +38,7 @@
             position: relative;
             display: grid;
             place-items: center;
+            min-height: 100vh;
             padding: 22px;
         }
 
@@ -55,7 +56,8 @@
         .app {
             position: relative;
             width: min(100%, 1240px);
-            min-height: min(92vh, 860px);
+            height: min(calc(100vh - 44px), 860px);
+            min-height: min(88vh, 760px);
             display: grid;
             grid-template-columns: minmax(0, 1.45fr) 340px;
             gap: 18px;
@@ -75,7 +77,8 @@
             border-radius: 34px;
             overflow: hidden;
             position: relative;
-            min-height: 72vh;
+            min-height: 0;
+            height: 100%;
         }
 
         canvas {
@@ -245,14 +248,19 @@
 
             .app {
                 grid-template-columns: 1fr;
+                height: auto;
             }
 
             .stage-shell {
-                min-height: 58vh;
+                min-height: min(62vh, 620px);
             }
         }
 
         @media (max-width: 640px) {
+            body {
+                min-height: auto;
+            }
+
             .hud {
                 padding: 14px;
             }
@@ -362,12 +370,12 @@
                     water: true
                 },
                 platforms: [
-                    { x: 350, y: 540, w: 210, h: 18 },
-                    { x: 640, y: 492, w: 180, h: 18 },
-                    { x: 925, y: 455, w: 140, h: 18 },
-                    { x: 1210, y: 505, w: 220, h: 18 },
-                    { x: 1565, y: 462, w: 165, h: 18 },
-                    { x: 1840, y: 420, w: 190, h: 18 }
+                    { x: 330, y: 548, w: 230, h: 18 },
+                    { x: 620, y: 510, w: 210, h: 18 },
+                    { x: 900, y: 484, w: 180, h: 18 },
+                    { x: 1190, y: 520, w: 240, h: 18 },
+                    { x: 1545, y: 484, w: 190, h: 18 },
+                    { x: 1820, y: 448, w: 220, h: 18 }
                 ],
                 hazards: [
                     { x: 560, w: 68, type: "spikes" },
@@ -403,13 +411,13 @@
                     water: false
                 },
                 platforms: [
-                    { x: 320, y: 525, w: 150, h: 16 },
-                    { x: 560, y: 470, w: 130, h: 16 },
-                    { x: 810, y: 425, w: 120, h: 16 },
-                    { x: 1080, y: 450, w: 190, h: 16 },
-                    { x: 1390, y: 390, w: 150, h: 16 },
-                    { x: 1670, y: 335, w: 130, h: 16 },
-                    { x: 1970, y: 365, w: 170, h: 16 }
+                    { x: 320, y: 534, w: 170, h: 16 },
+                    { x: 555, y: 490, w: 150, h: 16 },
+                    { x: 800, y: 452, w: 145, h: 16 },
+                    { x: 1070, y: 470, w: 210, h: 16 },
+                    { x: 1380, y: 420, w: 175, h: 16 },
+                    { x: 1650, y: 374, w: 155, h: 16 },
+                    { x: 1950, y: 395, w: 190, h: 16 }
                 ],
                 hazards: [
                     { x: 470, w: 62, type: "spikes" },
@@ -445,13 +453,13 @@
                     water: false
                 },
                 platforms: [
-                    { x: 310, y: 530, w: 135, h: 16 },
-                    { x: 560, y: 470, w: 120, h: 16 },
-                    { x: 785, y: 405, w: 115, h: 16 },
-                    { x: 1040, y: 352, w: 145, h: 16 },
-                    { x: 1355, y: 402, w: 150, h: 16 },
-                    { x: 1635, y: 338, w: 125, h: 16 },
-                    { x: 1935, y: 290, w: 160, h: 16 }
+                    { x: 300, y: 540, w: 150, h: 16 },
+                    { x: 545, y: 492, w: 145, h: 16 },
+                    { x: 775, y: 438, w: 135, h: 16 },
+                    { x: 1020, y: 394, w: 165, h: 16 },
+                    { x: 1335, y: 432, w: 170, h: 16 },
+                    { x: 1615, y: 382, w: 145, h: 16 },
+                    { x: 1915, y: 344, w: 180, h: 16 }
                 ],
                 hazards: [
                     { x: 465, w: 56, type: "spikes" },
@@ -470,7 +478,8 @@
             lastTimestamp: 0,
             message: "",
             won: false,
-            jumpQueued: false
+            jumpQueued: false,
+            jumpGraceUntil: 0
         };
 
         function createSceneList() {
@@ -551,6 +560,9 @@
             };
             state.message = scene.hint;
             state.won = false;
+            state.jumpQueued = false;
+            state.jumpGraceUntil = 0;
+            state.cameraX = 0;
         }
 
         function getGroundHeight(scene, worldX, height) {
@@ -906,14 +918,15 @@
             const playerWidth = getPlayerWidth(height);
             const playerHeight = getPlayerHeight(height);
             const moveAccel = 2100;
-            const maxSpeed = 290;
-            const friction = 0.83;
-            const gravity = 1550;
-            const jumpPower = 620;
+            const maxSpeed = 320;
+            const friction = 0.8;
+            const gravity = 1320;
+            const jumpPower = 820;
+            const coyoteTime = 0.11;
 
             const moveLeft = state.keys.has("ArrowLeft");
             const moveRight = state.keys.has("ArrowRight");
-            const wantsJump = state.jumpQueued;
+            const wantsJump = state.jumpQueued && state.time <= state.jumpGraceUntil;
 
             if (moveLeft && !moveRight) {
                 player.vx -= moveAccel * delta;
@@ -930,10 +943,15 @@
 
             player.vx = clamp(player.vx, -maxSpeed, maxSpeed);
 
-            if (wantsJump && player.onGround) {
+            if (player.onGround) {
+                state.jumpGraceUntil = state.time + (coyoteTime * 1000);
+            }
+
+            if (wantsJump && state.time <= state.jumpGraceUntil) {
                 player.vy = -jumpPower;
                 player.onGround = false;
                 state.jumpQueued = false;
+                state.jumpGraceUntil = 0;
             }
 
             player.vy += gravity * delta;
@@ -968,8 +986,8 @@
                 if (
                     intersectRect(playerRect, platformRect) &&
                     player.vy >= 0 &&
-                    prevBottom <= platform.y + 10 &&
-                    currBottom >= platform.y
+                    prevBottom <= platform.y + 16 &&
+                    currBottom >= platform.y - 4
                 ) {
                     player.y = platform.y - playerHeight;
                     player.vy = 0;
@@ -1079,6 +1097,7 @@
                 state.keys.add(event.key);
                 if (event.key === "ArrowUp") {
                     state.jumpQueued = true;
+                    state.jumpGraceUntil = state.time + (0.14 * 1000);
                 }
             }
         });
