@@ -24,4 +24,4 @@
 
 Сайт доступен по адресу:
 
-`https://lordvitofirim.github.io/quest-game/`
+https://lordvitofirim.github.io/quest-game/
