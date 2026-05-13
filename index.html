@@ -579,6 +579,16 @@
             };
         }
 
+        function getGoalTriggerRect(scene, height) {
+            const goal = getGoalRect(scene, height);
+            return {
+                x: goal.x - 26,
+                y: goal.y - 12,
+                w: goal.w + 52,
+                h: goal.h + 24
+            };
+        }
+
         function getCheckpoint(scene, progress) {
             return scene.checkpoints[Math.min(progress, scene.checkpoints.length - 1)];
         }
@@ -1013,7 +1023,7 @@
                 killPlayer("Топь затянула героя.");
             }
 
-            const goal = getGoalRect(scene, height);
+            const goal = getGoalTriggerRect(scene, height);
             const playerRect = {
                 x: player.x - playerWidth * 0.32,
                 y: player.y + 4,
