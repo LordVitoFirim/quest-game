@@ -1023,8 +1023,7 @@
 
             if (!state.won && intersectRect(playerRect, goal)) {
                 state.won = true;
-                state.message = `Фонарь найден. ${scene.name} пройдена, можно выбрать следующую локацию справа.`;
-                syncSceneText();
+                setScene(state.sceneIndex + 1);
             } else if (!state.won) {
                 state.message = `${scene.hint} Цель: ${getCheckpoint(scene, getProgress(scene, player.x))}.`;
             }
